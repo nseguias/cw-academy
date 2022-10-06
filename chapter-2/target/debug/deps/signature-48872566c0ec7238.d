@@ -1,0 +1,12 @@
+/Users/nseguias/dev/cw-academy/chapter-2/target/debug/deps/signature-48872566c0ec7238.rmeta: /Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/lib.rs /Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/hazmat.rs /Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/error.rs /Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/keypair.rs /Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/signature.rs /Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/signer.rs /Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/verifier.rs /Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/../README.md
+
+/Users/nseguias/dev/cw-academy/chapter-2/target/debug/deps/signature-48872566c0ec7238.d: /Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/lib.rs /Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/hazmat.rs /Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/error.rs /Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/keypair.rs /Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/signature.rs /Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/signer.rs /Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/verifier.rs /Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/../README.md
+
+/Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/lib.rs:
+/Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/hazmat.rs:
+/Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/error.rs:
+/Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/keypair.rs:
+/Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/signature.rs:
+/Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/signer.rs:
+/Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/verifier.rs:
+/Users/nseguias/.cargo/registry/src/github.com-1ecc6299db9ec823/signature-1.6.4/src/../README.md:
