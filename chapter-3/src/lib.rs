@@ -2,6 +2,8 @@ use cosmwasm_std::{
     entry_point, Binary, Deps, DepsMut, Empty, Env, MessageInfo, Response, StdResult,
 };
 
+pub mod msg;
+
 #[entry_point]
 pub fn instantiate(
     _deps: DepsMut,
