@@ -1,5 +1,5 @@
 [package]
-name = "chapter-4"
+name = "chapter-5"
 version = "0.1.0"
 edition = "2021"
 
@@ -11,6 +11,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 cosmwasm-std = "1.1.4"
 serde = "1.0.0"
+cw-storage-plus = "0.13.4"
 
 [dev-dependencies]
 cw-multi-test = "0.15.0"
