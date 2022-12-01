@@ -1,10 +1,12 @@
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint128};
+use cosmwasm_std::{coins, BankMsg, DepsMut, Env, MessageInfo, Response, Uint128};
 
 use crate::{
     query,
-    state::{BIDS, CONFIG, WINNER},
+    state::{BidStatus, BIDS, CONFIG, WINNER},
     ContractError,
 };
+
+const DECIMALS: u32 = 6;
 
 pub fn bid(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let cfg = CONFIG.load(deps.storage)?;
@@ -12,6 +14,11 @@ pub fn bid(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, Cont
     // contract owner cannot bid
     if info.sender == cfg.contract_owner {
         return Err(ContractError::Unauthorized {});
+    }
+
+    // can only bid on open bids
+    if cfg.status != BidStatus::Opened {
+        return Err(ContractError::BidClosed {});
     }
 
     let funds = info.funds.clone();
@@ -29,34 +36,80 @@ pub fn bid(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, Cont
     if funds[0].denom != cfg.denom {
         return Err(ContractError::WrongDenom {});
     }
-    // need to bid higher than highest bid
-    if funds[0].amount <= highest_bid.total_bid {
+
+    // bid without commision
+    let gross_bid = funds[0].amount;
+
+    // commission
+    let commission =
+        gross_bid * Uint128::from(cfg.commission) / (Uint128::from(10u128.pow(DECIMALS)));
+
+    // bid including commission
+    let net_bid = gross_bid - commission;
+
+    // bid (minos commision) has to be higher than highest bid
+    if net_bid <= highest_bid.total_bid {
         return Err(ContractError::BidTooLow {});
     }
 
     let winner = WINNER.load(deps.storage)?;
 
+    // winner shouldn't be allowed to bid himself
     if winner.0 == info.sender {
         return Err(ContractError::YouAreTheHighestBidder {});
     }
 
-    let bid = BIDS
-        .may_load(deps.storage, info.sender.clone())?
-        .unwrap_or(Uint128::from(0u8))
-        + funds[0].amount;
+    // create bank message to be sent to contract owner with the commision paid by the bidder
+    let bank_msg = BankMsg::Send {
+        to_address: cfg.contract_owner.to_string(),
+        amount: coins(commission.into(), cfg.denom),
+    };
 
-    // save winner to state
-    WINNER.save(deps.storage, &(info.sender.clone(), bid))?;
+    // save new winner to state
+    WINNER.save(deps.storage, &(info.sender.clone(), net_bid))?;
 
     // add new bid to bids map
-    BIDS.save(deps.storage, winner.0, &winner.1)?;
+    BIDS.save(deps.storage, info.sender.clone(), &net_bid)?;
 
     Ok(Response::new()
         .add_attribute("action", "bid")
         .add_attribute("highest_bidder", info.sender)
-        .add_attribute("highest_bid", info.funds[0].amount))
+        .add_attribute("highest_bid", net_bid)
+        .add_message(bank_msg))
 }
 
+pub fn close(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    let mut cfg = CONFIG.load(deps.storage)?;
+
+    // only contract owner can close bid
+    if info.sender != cfg.contract_owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // cannot close a bid that's not open
+    if cfg.status != BidStatus::Opened {
+        return Err(ContractError::BidClosed {});
+    }
+
+    let winner = WINNER.load(deps.storage)?;
+
+    // update status to Closed and save to storage
+    cfg.status = BidStatus::Closed;
+    CONFIG.save(deps.storage, &cfg)?;
+
+    // create bank message to be sent to contract owner with all funds
+    let bank_msg = BankMsg::Send {
+        to_address: cfg.contract_owner.to_string(),
+        amount: coins(winner.1.into(), cfg.denom),
+    };
+
+    // winner balance is set to 0 so he won't be able to retract any funds
+    BIDS.save(deps.storage, winner.0, &Uint128::zero())?;
+
+    // TODO: here goes the logic to transfer commodity IRL to the bid winner
+
+    Ok(Response::new().add_message(bank_msg))
+}
 pub fn retract(
     _deps: DepsMut,
     _env: Env,

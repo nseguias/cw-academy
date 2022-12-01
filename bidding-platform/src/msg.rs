@@ -6,7 +6,7 @@ use cosmwasm_std::{StdError, StdResult, Uint128};
 pub struct InstantiateMsg {
     pub commodity: String,
     pub contract_owner: Option<String>,
-    pub commision: Option<String>,
+    pub commision: Option<u128>,
 }
 
 impl InstantiateMsg {
@@ -34,6 +34,8 @@ impl InstantiateMsg {
 pub enum ExecuteMsg {
     // any user other than the contract owner can raise their bid by sending tokens to the contract with the Bid {} message
     Bid {},
+    // only owner can close bid
+    Close {},
     // sends all senders bids (minus commissions) to the receiver account (if provided) or to the original bidder
     Retract { receiver: Option<String> },
 }

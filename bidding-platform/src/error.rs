@@ -20,6 +20,9 @@ pub enum ContractError {
 
     #[error("You are the highest bidder")]
     YouAreTheHighestBidder {},
+
+    #[error("This bid is closed")]
+    BidClosed {},
     // Add any other custom errors you like here.
     // Look at https://docs.rs/thiserror/1.0.21/thiserror/ for details.
 }
