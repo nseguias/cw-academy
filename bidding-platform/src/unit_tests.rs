@@ -207,13 +207,13 @@ mod tests {
         let res = execute(deps.as_mut(), env.clone(), execute_info, close_bid_msg);
         assert_eq!(res.unwrap_err(), ContractError::BidClosed {});
 
-        // query total bid for ADDR1 after closing should be 0
+        // query total bid for ADDR1 after closing should be initial deposit: 1_000_000
         let query_msg = QueryMsg::TotalBid {
             address: ADDR1.to_string(),
         };
         let res: TotalBidResponse =
             from_binary(&query(deps.as_ref(), env.clone(), query_msg.clone()).unwrap()).unwrap();
-        assert_eq!(res.total_bid, Uint128::zero());
+        assert_eq!(res.total_bid, Uint128::from(1_000_000u128));
 
         // query total bid for ADDR2 (bid winner) should return 9990000
         let query_msg = QueryMsg::TotalBid {
@@ -336,7 +336,7 @@ mod tests {
 
         assert_eq!(res.unwrap_err(), ContractError::NothingToRetract {});
 
-        // retracting bid as contract owner without passing receiver should fail (balance 0 already)
+        // retracting bid as contract owner without passing receiver should work
         let execute_info = mock_info(ADDR1, &[]);
 
         let res = execute(
@@ -344,9 +344,15 @@ mod tests {
             env.clone(),
             execute_info.clone(),
             retract_bid_msg.clone(),
-        );
+        )
+        .unwrap();
 
-        assert_eq!(res.unwrap_err(), ContractError::NothingToRetract {});
+        // create a bank message for owner
+        let bank_msg = CosmosMsg::Bank(BankMsg::Send {
+            to_address: ADDR1.to_string(),
+            amount: vec![coin(1_000_000u128.into(), DENOM)],
+        });
+        assert_eq!(res.messages[0].msg, bank_msg);
 
         // retracting bid as ADDR3 (bid winner) to a different receiver should work
         let retract_bid_msg = ExecuteMsg::Retract {
@@ -647,6 +653,25 @@ mod tests {
         let bank_msg = CosmosMsg::Bank(BankMsg::Send {
             to_address: "ann".to_string(),
             amount: vec![coin(18_981_000u128.into(), DENOM)],
+        });
+        assert_eq!(res.messages[0].msg, bank_msg);
+
+        // retracting initial bid for owner (without receiver) should work
+        let retract_bid_msg = ExecuteMsg::Retract { receiver: None };
+        let execute_info = mock_info("owner", &[]);
+
+        let res = execute(
+            deps.as_mut(),
+            env.clone(),
+            execute_info.clone(),
+            retract_bid_msg.clone(),
+        )
+        .unwrap();
+
+        // create a bank message for ann
+        let bank_msg = CosmosMsg::Bank(BankMsg::Send {
+            to_address: "owner".to_string(),
+            amount: vec![coin(1_000_000u128.into(), DENOM)],
         });
         assert_eq!(res.messages[0].msg, bank_msg);
     }

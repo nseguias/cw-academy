@@ -29,7 +29,6 @@ pub fn bid(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, Cont
     }
 
     let highest_bid = query::highest_bid(deps.as_ref())?;
-    // let highest_bid = BIDS.load(deps.storage, cfg.contract_owner)?;
 
     // need to bid in the initial bidder denom
     if funds[0].denom != cfg.denom {
@@ -57,15 +56,7 @@ pub fn bid(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, Cont
     if total_bid <= highest_bid.total_bid {
         return Err(ContractError::BidTooLow {});
     }
-    /*
-    ////////// DEBUGGING /////////
-    let winner = WINNER.load(deps.storage)?;
 
-    // winner shouldn't be allowed to bid himself
-    if winner.0 == info.sender {
-        return Err(ContractError::YouAreTheHighestBidder {});
-    }
-    */
     // create bank message to be sent to contract owner with the commision paid by the bidder
     let bank_msg = BankMsg::Send {
         to_address: cfg.contract_owner.to_string(),
@@ -102,8 +93,6 @@ pub fn close(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, Co
     cfg.status = BidStatus::Closed;
     CONFIG.save(deps.storage, &cfg)?;
 
-    // let bid = BIDS.load(deps.storage, info.sender.clone())?;
-
     let winner = WINNER.load(deps.storage)?;
 
     // create bank message to send contract owner tokens to their address
@@ -111,11 +100,6 @@ pub fn close(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, Co
         to_address: cfg.contract_owner.to_string(),
         amount: coins(winner.1.into(), cfg.denom),
     };
-
-    // winner balance is set to 0 so he won't be able to retract any funds
-    BIDS.save(deps.storage, info.sender, &Uint128::zero())?;
-
-    // TODO: here goes the logic to transfer commodity IRL to the bid winner
 
     Ok(Response::new().add_message(bank_msg))
 }

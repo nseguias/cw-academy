@@ -28,4 +28,5 @@ The cw_storage_plus::Map<Key, Value> utility would be a great tool to keep total
 
 ### Improvements
 
-1. Bid contracts should have an expiration so user funds don't get trapped until owner closes the bid.
+1. Bid contracts should have an expiration time / block so user funds don't get trapped until owner closes the bid.
+2. [done] To prevent spamming, the owner must send funds with the instantiate message; bidders should outbid owner in order to participate, think of it as "minimum required bid".
