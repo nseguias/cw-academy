@@ -23,6 +23,15 @@ pub enum ContractError {
 
     #[error("This bid is closed")]
     BidClosed {},
+
+    #[error("Cannot retrieve funds while the bid is still open")]
+    BidStillOpen {},
+
+    #[error("There's nothing to retract")]
+    NothingToRetract {},
+
+    #[error("The winner cannot retract bid")]
+    WinnerCannotRetractBid {},
     // Add any other custom errors you like here.
     // Look at https://docs.rs/thiserror/1.0.21/thiserror/ for details.
 }

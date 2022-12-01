@@ -91,30 +91,69 @@ pub fn close(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, Co
         return Err(ContractError::BidClosed {});
     }
 
-    let winner = WINNER.load(deps.storage)?;
-
     // update status to Closed and save to storage
     cfg.status = BidStatus::Closed;
     CONFIG.save(deps.storage, &cfg)?;
 
-    // create bank message to be sent to contract owner with all funds
+    // // create bank message to send winning bid tokens to contract owner
+    // let winner = WINNER.load(deps.storage)?;
+
+    // let bank_msg = BankMsg::Send {
+    //     to_address: cfg.contract_owner.to_string(),
+    //     amount: coins(winner.1.into(), cfg.denom),
+    // };
+
+    let bid = BIDS.load(deps.storage, info.sender.clone())?;
+
+    // create bank message to send contract owner tokens to their address
     let bank_msg = BankMsg::Send {
         to_address: cfg.contract_owner.to_string(),
-        amount: coins(winner.1.into(), cfg.denom),
+        amount: coins(bid.into(), cfg.denom),
     };
 
     // winner balance is set to 0 so he won't be able to retract any funds
-    BIDS.save(deps.storage, winner.0, &Uint128::zero())?;
+    BIDS.save(deps.storage, info.sender, &Uint128::zero())?;
 
     // TODO: here goes the logic to transfer commodity IRL to the bid winner
 
     Ok(Response::new().add_message(bank_msg))
 }
+
 pub fn retract(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
-    _receiver: Option<String>,
+    info: MessageInfo,
+    receiver: Option<String>,
 ) -> Result<Response, ContractError> {
-    unimplemented!()
+    let cfg = CONFIG.load(deps.storage)?;
+
+    // users cannot retract any bids until the bid is closed by the owner
+    if cfg.status != BidStatus::Closed {
+        return Err(ContractError::BidStillOpen {});
+    }
+
+    let winner = WINNER.load(deps.storage)?;
+    if winner.0 == info.sender {
+        return Err(ContractError::WinnerCannotRetractBid {});
+    }
+
+    let bid = BIDS
+        .may_load(deps.storage, info.sender.clone())?
+        .unwrap_or(Uint128::zero());
+
+    if bid == Uint128::zero() {
+        return Err(ContractError::NothingToRetract {});
+    };
+    let recipient = receiver.unwrap_or(info.sender.to_string());
+
+    // create bank message to send funds to losing bidders (minus commissions)
+    let bank_msg = BankMsg::Send {
+        to_address: recipient,
+        amount: coins(bid.into(), cfg.denom),
+    };
+
+    // set bid balance to 0 so users cannot retract funds more than once
+    BIDS.save(deps.storage, info.sender, &Uint128::zero())?;
+
+    Ok(Response::new().add_message(bank_msg))
 }

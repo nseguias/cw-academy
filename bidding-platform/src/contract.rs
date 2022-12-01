@@ -82,5 +82,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::HighestBidder {} => to_binary(&query::highest_bid(deps)?),
         QueryMsg::TotalBid { address: addr } => to_binary(&query::total_bid(deps, addr)?),
+        QueryMsg::IsBidClosed {} => to_binary(&query::is_closed(deps)?),
+        QueryMsg::BidWinner {} => to_binary(&query::bid_winner(deps)?),
     }
 }

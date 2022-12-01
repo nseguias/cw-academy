@@ -49,6 +49,12 @@ pub enum QueryMsg {
     /// Returns the highest bidder and their total bid amount.
     #[returns(HighestBidderResponse)]
     HighestBidder {},
+    /// Returns true if bid is closed.
+    #[returns(IsBidClosedResponse)]
+    IsBidClosed {},
+    /// Returns the highest bidder and their total bid amount.
+    #[returns(BidWinnerResponse)]
+    BidWinner {},
 }
 
 // We define a custom struct for each query response
@@ -63,12 +69,22 @@ pub struct HighestBidderResponse {
     pub total_bid: Uint128,
 }
 
+#[cw_serde]
+pub struct IsBidClosedResponse {
+    pub is_closed: bool,
+}
+
+#[cw_serde]
+pub struct BidWinnerResponse {
+    pub winner: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn validate_instantiatemsg_name() {
+    fn validate_instantiate_msg_name() {
         // Too short
         let mut msg = InstantiateMsg {
             commodity: str::repeat("a", 2),
