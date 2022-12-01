@@ -28,7 +28,6 @@ pub fn bid(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, Cont
         return Err(ContractError::TooManyOrLittleNativeTokensSent {});
     }
 
-    // TODO: this should use a query
     let highest_bid = query::highest_bid(deps.as_ref())?;
     // let highest_bid = BIDS.load(deps.storage, cfg.contract_owner)?;
 
@@ -37,7 +36,12 @@ pub fn bid(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, Cont
         return Err(ContractError::WrongDenom {});
     }
 
-    // bid without commision
+    // retrieve old bid amount for user
+    let old_bid = BIDS
+        .may_load(deps.storage, info.sender.clone())?
+        .unwrap_or(Uint128::zero());
+
+    // new bid without commision
     let gross_bid = funds[0].amount;
 
     // commission
@@ -47,18 +51,21 @@ pub fn bid(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, Cont
     // bid including commission
     let net_bid = gross_bid - commission;
 
-    // bid (minos commision) has to be higher than highest bid
-    if net_bid <= highest_bid.total_bid {
+    let total_bid = old_bid + net_bid;
+
+    // old_bid + new_bid (minus commision) has to be higher than highest bid
+    if total_bid <= highest_bid.total_bid {
         return Err(ContractError::BidTooLow {});
     }
-
+    /*
+    ////////// DEBUGGING /////////
     let winner = WINNER.load(deps.storage)?;
 
     // winner shouldn't be allowed to bid himself
     if winner.0 == info.sender {
         return Err(ContractError::YouAreTheHighestBidder {});
     }
-
+    */
     // create bank message to be sent to contract owner with the commision paid by the bidder
     let bank_msg = BankMsg::Send {
         to_address: cfg.contract_owner.to_string(),
@@ -66,15 +73,15 @@ pub fn bid(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, Cont
     };
 
     // save new winner to state
-    WINNER.save(deps.storage, &(info.sender.clone(), net_bid))?;
+    WINNER.save(deps.storage, &(info.sender.clone(), total_bid))?;
 
     // add new bid to bids map
-    BIDS.save(deps.storage, info.sender.clone(), &net_bid)?;
+    BIDS.save(deps.storage, info.sender.clone(), &total_bid)?;
 
     Ok(Response::new()
         .add_attribute("action", "bid")
         .add_attribute("highest_bidder", info.sender)
-        .add_attribute("highest_bid", net_bid)
+        .add_attribute("highest_bid", total_bid)
         .add_message(bank_msg))
 }
 
@@ -95,20 +102,14 @@ pub fn close(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, Co
     cfg.status = BidStatus::Closed;
     CONFIG.save(deps.storage, &cfg)?;
 
-    // // create bank message to send winning bid tokens to contract owner
-    // let winner = WINNER.load(deps.storage)?;
+    // let bid = BIDS.load(deps.storage, info.sender.clone())?;
 
-    // let bank_msg = BankMsg::Send {
-    //     to_address: cfg.contract_owner.to_string(),
-    //     amount: coins(winner.1.into(), cfg.denom),
-    // };
-
-    let bid = BIDS.load(deps.storage, info.sender.clone())?;
+    let winner = WINNER.load(deps.storage)?;
 
     // create bank message to send contract owner tokens to their address
     let bank_msg = BankMsg::Send {
         to_address: cfg.contract_owner.to_string(),
-        amount: coins(bid.into(), cfg.denom),
+        amount: coins(winner.1.into(), cfg.denom),
     };
 
     // winner balance is set to 0 so he won't be able to retract any funds

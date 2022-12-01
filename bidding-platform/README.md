@@ -29,4 +29,3 @@ The cw_storage_plus::Map<Key, Value> utility would be a great tool to keep total
 ### Improvements
 
 1. Bid contracts should have an expiration so user funds don't get trapped until owner closes the bid.
-2. Commission collection can be improved by only charging to recurrent bidders the % on the extra funds sent (as they already paid % the first time they bid)
