@@ -5,7 +5,10 @@ mod tests {
 
     use crate::{
         contract::{execute, instantiate, query},
-        msg::{ExecuteMsg, HighestBidderResponse, InstantiateMsg, QueryMsg, TotalBidResponse},
+        msg::{
+            BidWinnerResponse, ExecuteMsg, HighestBidderResponse, InstantiateMsg,
+            IsBidClosedResponse, QueryMsg, TotalBidResponse,
+        },
     };
 
     // returns an object that can be used with cw-multi-test
@@ -182,6 +185,21 @@ mod tests {
 
         assert_eq!(res.total_bid, Uint128::from(18_981_000u128));
 
+        // Bid should be opened
+        let res: IsBidClosedResponse = app
+            .wrap()
+            .query_wasm_smart(contract_addr.clone(), &QueryMsg::IsBidClosed {})
+            .unwrap();
+
+        assert!(!res.is_closed);
+
+        // querying the bid winner should throw an error
+        let res: Result<BidWinnerResponse, cosmwasm_std::StdError> = app
+            .wrap()
+            .query_wasm_smart(contract_addr.clone(), &QueryMsg::BidWinner {});
+
+        assert!(res.is_err());
+
         // Owner closes bid
         let close_bid_msg = ExecuteMsg::Close {};
 
@@ -275,5 +293,21 @@ mod tests {
                 + final_balance_anon[0].amount,
             Uint128::from(42_000_000u128)
         );
+
+        // Bid should be closed
+        let res: IsBidClosedResponse = app
+            .wrap()
+            .query_wasm_smart(contract_addr.clone(), &QueryMsg::IsBidClosed {})
+            .unwrap();
+
+        assert!(res.is_closed);
+
+        // Alex should be the bid winner :)
+        let res: BidWinnerResponse = app
+            .wrap()
+            .query_wasm_smart(contract_addr.clone(), &QueryMsg::BidWinner {})
+            .unwrap();
+
+        assert_eq!(res.winner, "alex".to_string());
     }
 }
